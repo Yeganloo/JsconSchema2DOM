@@ -1,0 +1,24 @@
+{
+  "name": "jsonschema2dom",
+  "version": "0.0.1",
+  "description": "A core library to generate dom from given json schema",
+  "main": "jsonschema2dom.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Yeganloo/JsconSchema2DOM.git"
+  },
+  "keywords": [
+    "JsonSchema",
+    "DOM",
+    "Generator"
+  ],
+  "author": "Hosein Yeganloo <hoseinyeganloo@gmail.com>",
+  "license": "SEE LICENSE IN LICENSE File",
+  "bugs": {
+    "url": "https://github.com/Yeganloo/JsconSchema2DOM/issues"
+  },
+  "homepage": "https://github.com/Yeganloo/JsconSchema2DOM#readme"
+}
