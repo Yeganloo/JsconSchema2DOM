@@ -3,7 +3,9 @@
         "target": "es5",
         "sourceMap":  true,
         "removeComments": true,
-        "outDir":"./build",
+        "noImplicitAny": true,
+        "module": "commonjs",
+        "outDir":"./dist",
         "sourceRoot":"./src"
     }
 }
