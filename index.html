@@ -6,7 +6,7 @@
     $(function(){
       var parser = new JsonSchema2Dom();
       console.log(parser);
-      $.get("./Definitions/schema.json",function(data){
+      $.get("./sample.json",function(data){
         console.log(data);
         var k;
         console.log(k = parser.Parse(data));
