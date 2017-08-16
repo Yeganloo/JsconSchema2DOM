@@ -1,4 +1,5 @@
-class Schema{
+//Schems definition
+interface Schema{
   $id:string;
   $schema:string;
   $ref:string;
@@ -37,97 +38,96 @@ class Schema{
   anyOf:Array<Schema>;
   oneOf:Array<Schema>;
   not:Schema;
-
 }
 
-class Setting{
-  Handlers:{[id:string]:Function}={};
-  constructor(handlers:{[id:string]:Function}){
-    this.Handlers["title"] = function(title:string){
-        if(title != null){
-        let container:Element = document.createElement("fieldset");
-        let lg:Element = document.createElement("legend");
-        lg.textContent = title;
-        container.appendChild(lg);
-        return container;
-      }
-    }
-
-    this.Handlers["properties"] = function(properties:Array<Schema>,container:Element,required:Array<string>){
-      if(required == null){
-        required = [];
-      }
-      for(var prop in properties){
-        let el:Element;
-        if(properties[prop].format == null){
-          switch(properties[prop].type){
-            case "string":
-            case ["string","null"]:
-            default:
-              if(properties[prop].maxLength == null || properties[prop].maxLength <= 150){
-                el = document.createElement("input");
-              }else{
-                el = document.createElement("textarea");
-              }
-
-              el.setAttribute("type","text");
-              if(properties[prop].pattern!=null){
-                el.setAttribute("pattern",properties[prop].pattern);
-              }
-            break;
-            case "number":
-            case "integer":
-              el = document.createElement("input");
-              el.setAttribute("type","number");
-            break;
-            case "object":
-            continue;
-
-          }
-        }else{
-          switch(properties[prop].format){
-            case "email":
-              el = document.createElement("input");
-              el.setAttribute("type","email");
-            break;
-            default:
-              el = document.createElement("input");
-              el.setAttribute("type","text");
-              if(properties[prop].pattern!=null){
-                el.setAttribute("pattern",properties[prop].pattern);
-            }
-          }
-        }
-        el.setAttribute("name",prop);
-        if(required.indexOf(prop) != -1){
-          el.setAttribute("required","");
-        }
-        container.appendChild(el);
-
-      }
-    }
-
-    if(handlers != null)
-      for(var id in handlers){
-        this.Handlers[id] = handlers[id];
-      }
-  }
+//Dom Handlers interface
+interface SchemaHandler{
+  Signiture:Schema;
+  Handler:Function;
 }
 
+//Settings class
+class JsonSchema2DomSetting{
+  Handlers:Array<SchemaHandler>=[];
+  IdPrefix:string = "";
+  CreateForm:boolean=false;
+}
+
+//Main Class
 class JsonSchema2Dom {
-  Settings:Setting;
-  constructor(settings:Setting){
+  Settings:JsonSchema2DomSetting;
+  constructor(settings:JsonSchema2DomSetting){
     if(settings != null){
       this.Settings = settings;
     }else{
-      this.Settings = new Setting(null);
+      this.Settings = new JsonSchema2DomSetting();
     }
+  }
 
+  //Object Default Processor
+  ObjectProcessor(self:JsonSchema2Dom,name:string,schema:Schema,required:boolean):Element{
+    let el:Element;
+    schema.title = schema.title || name || schema.typeName;
+    if(schema.title!=null){
+      el = document.createElement("fieldset");
+      let lg:Element = document.createElement("legend");
+      lg.textContent = schema.title;
+      el.appendChild(lg);
+    }else{
+      el = document.createElement("div");
+    }
+    if(schema.properties!= null){
+      //TODO async process
+      for(let prop in schema.properties){
+        el.appendChild(self.GetHandler(self,schema.properties[prop])(self,prop,schema.properties[prop],schema.required.indexOf(name) != -1));
+      }
+    }
+    return el;
+  }
+
+  //Determine handler of a Schema
+  GetHandler(self:JsonSchema2Dom,schema:Schema):Function{
+    if(this.Settings.Handlers.length>0){
+      //TODO Check Signiture to find DOM creator
+    }else{
+      if(schema.format!=null){
+        return self.InputProcessor;
+      }else{
+        switch(schema.type){
+          case "object":
+          return self.ObjectProcessor;
+          default:
+          return self.InputProcessor;
+        }
+      }
+    }
+    return self.ObjectProcessor;
+  }
+
+  //
+  InputProcessor(self:JsonSchema2Dom,name:string,schema:Schema,required:boolean):Element{
+    let el:Element;
+    el = document.createElement("input");
+    el.setAttribute("id",self.Settings.IdPrefix + name);
+    el.setAttribute("name",name);
+    if(required){
+      el.setAttribute("required","");
+    }
+    schema.title = schema.title || name || schema.typeName;
+    if(schema.title != null){
+      var lb = document.createElement("label");
+      lb.textContent = schema.title;
+      lb.appendChild(el);
+      el = lb;
+    }
+    if(schema.description!=null){
+      el.setAttribute("title",schema.description);
+    }
+    return el;
   }
 
   Parse(schema:Schema):Element{
-    let Container:Element = this.Settings.Handlers["title"](schema.title);
-    this.Settings.Handlers["properties"](schema.properties,Container,schema.required);
+    let Container:Element = this.GetHandler(this,schema)(this,null,schema,false);
     return Container;
   }
 
