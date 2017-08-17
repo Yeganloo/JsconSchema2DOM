@@ -113,7 +113,54 @@ class JsonSchema2Dom {
     if(required){
       el.setAttribute("required","");
     }
-    schema.title = schema.title || name || schema.typeName;
+    if(schema.pattern!=null){
+      el.setAttribute("pattern",schema.pattern);
+    }
+    if(schema.format){
+      el.setAttribute("type",schema.format);
+      switch(schema.format){
+        case "button":
+        case "submit":
+        case "reset":
+        break;
+
+        case "image":
+        break;
+
+        case "checkbox":
+        case "radio":
+        break;
+
+        case "color":
+        case "file":
+        case "date":
+        case "datetime-local":
+        case "month":
+        case "time":
+        case "week":
+        break;
+
+        case "email":
+        case "tel":
+        case "text":
+        case "password":
+        case "search":
+        case "url":
+        break;
+
+        case "hidden":
+        break;
+
+        case "number":
+        case "range":
+        break;
+
+        default:
+        break;
+      }
+    }
+
+    //TODO Waht about submit? it does not need Label tag
     if(schema.title != null){
       var lb = document.createElement("label");
       lb.textContent = schema.title;
