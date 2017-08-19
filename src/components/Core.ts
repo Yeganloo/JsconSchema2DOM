@@ -48,11 +48,18 @@ interface SchemaHandler{
   Handler:Function;
 }
 
+interface Form{
+  Action:string;
+  Method:string;
+  Name:string;
+  Id:string;
+}
+
 //Settings class
 class JsonSchema2DomSetting{
   Handlers:Array<SchemaHandler>=[];
   IdPrefix:string = "";
-  CreateForm:boolean=false;
+  FormDefinition:Form=null;
 }
 
 //Main Class
@@ -184,6 +191,16 @@ class JsonSchema2Dom {
 
   Parse(schema:Schema):Element{
     let Container:Element = this.GetHandler(this,schema)(this,null,schema,false);
+    var def = this.Settings.FormDefinition;
+    if(def!=null){
+      let frm = document.createElement("form");
+      frm.appendChild(Container);
+      frm.setAttribute("action",def.Action);
+      frm.setAttribute("method",def.Method);
+      frm.setAttribute("name",def.Name);
+      frm.setAttribute("id",this.Settings.IdPrefix + def.Id);
+      Container = frm;
+    }
     return Container;
   }
 
