@@ -76,6 +76,7 @@ class JsonSchema2Dom {
   //Object Default Processor
   ObjectProcessor(self:JsonSchema2Dom,name:string,schema:Schema,required:boolean):Element{
     let el:Element;
+    schema.required = schema.required || [];
     schema.title = schema.title || name || schema.typeName;
     if(schema.title!=null){
       el = document.createElement("fieldset");
@@ -88,7 +89,7 @@ class JsonSchema2Dom {
     if(schema.properties!= null){
       //TODO async process
       for(let prop in schema.properties){
-        el.appendChild(self.GetHandler(self,schema.properties[prop])(self,prop,schema.properties[prop],schema.required.indexOf(name) != -1));
+        el.appendChild(self.GetHandler(self,schema.properties[prop])(self,prop,schema.properties[prop],schema.required.indexOf(prop) != -1));
       }
     }
     return el;
@@ -104,9 +105,9 @@ class JsonSchema2Dom {
       }else{
         switch(schema.type){
           case "object":
-          return self.ObjectProcessor;
+            return self.ObjectProcessor;
           default:
-          return self.InputProcessor;
+            return self.InputProcessor;
         }
       }
     }
@@ -117,7 +118,7 @@ class JsonSchema2Dom {
   InputProcessor(self:JsonSchema2Dom,name:string,schema:Schema,required:boolean):Element{
     let el:Element;
     el = document.createElement("input");
-    if(schema.format){
+    if(schema.format != null){
       el.setAttribute("type",schema.format);
       switch(schema.format){
         case "button":
@@ -174,6 +175,11 @@ class JsonSchema2Dom {
           }
         break;
       }
+    }else if(schema.title != null){
+      var lb = document.createElement("label");
+      lb.textContent = schema.title;
+      lb.appendChild(el);
+      el = lb;
     }
     el.setAttribute("id",self.Settings.IdPrefix + name);
     el.setAttribute("name",name);

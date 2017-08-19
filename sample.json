@@ -28,7 +28,17 @@
     },
     "test4": {
       "type": "object",
-      "title": "Object"
+      "title": "Object",
+      "properties":{
+        "name":{
+          "title":"Name",
+          "type":"string"
+        },
+        "lname":{
+          "title":"Last Name",
+          "type":"string"
+        }
+      }
     },
     "test5": {
       "typeName": "testenum",
