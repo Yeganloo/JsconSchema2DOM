@@ -28,7 +28,7 @@ interface Schema{
   dependencies:{[id:string]:Schema|Array<string>}
   propertyNames:Schema;
   const:object;
-  enum:Array<[string,number,{[id:string]:any}]>;
+  enum:Array<string|number|{[id:string]:any}>;
   enumNames:Array<string>;
   type:string|Array<string>;
   typeName:string;
@@ -38,6 +38,8 @@ interface Schema{
   anyOf:Array<Schema>;
   oneOf:Array<Schema>;
   not:Schema;
+
+  [id:string]:any;
 }
 
 //Dom Handlers interface
@@ -108,6 +110,64 @@ class JsonSchema2Dom {
   InputProcessor(self:JsonSchema2Dom,name:string,schema:Schema,required:boolean):Element{
     let el:Element;
     el = document.createElement("input");
+    if(schema.format){
+      el.setAttribute("type",schema.format);
+      switch(schema.format){
+        case "button":
+        case "submit":
+        case "reset":
+          el.setAttribute("value",schema.title);
+        break;
+        case "image":
+          el.setAttribute("value",schema.title);
+          if(schema.src != null){
+            el.setAttribute("src",schema.src);
+          }
+        break;
+        default:
+          switch(schema.type){
+            case "file":
+              if((schema.maximum != null && schema.maximum!=1) || (schema.maxItems!= null && schema.maxItems!=1)){
+                el.setAttribute("multiple","multiple");
+              }
+            break;
+            case "password":
+              if(schema.minLength!=null){
+                el.setAttribute("minLength",schema.minLength.toString());
+              }
+            break;
+            case "text":
+              if(schema.maxLength!=null){
+                if(schema.maxLength >= 100){
+                  el = document.createElement("textarea");
+                }
+                el.setAttribute("maxLength",schema.maxLength.toString());
+              }
+            break;
+            case "number":
+            case "range":
+            case "date":
+            case "datetime-local":
+            case "month":
+            case "time":
+            case "week":
+              if(schema.maximum != null){
+                el.setAttribute("maximum",schema.maximum.toString());
+              }
+              if(schema.minimum != null){
+                el.setAttribute("minimum",schema.minimum.toString());
+              }
+            break;
+          }
+          if(schema.title != null){
+            var lb = document.createElement("label");
+            lb.textContent = schema.title;
+            lb.appendChild(el);
+            el = lb;
+          }
+        break;
+      }
+    }
     el.setAttribute("id",self.Settings.IdPrefix + name);
     el.setAttribute("name",name);
     if(required){
@@ -115,57 +175,6 @@ class JsonSchema2Dom {
     }
     if(schema.pattern!=null){
       el.setAttribute("pattern",schema.pattern);
-    }
-    if(schema.format){
-      el.setAttribute("type",schema.format);
-      switch(schema.format){
-        case "button":
-        case "submit":
-        case "reset":
-        break;
-
-        case "image":
-        break;
-
-        case "checkbox":
-        case "radio":
-        break;
-
-        case "color":
-        case "file":
-        case "date":
-        case "datetime-local":
-        case "month":
-        case "time":
-        case "week":
-        break;
-
-        case "email":
-        case "tel":
-        case "text":
-        case "password":
-        case "search":
-        case "url":
-        break;
-
-        case "hidden":
-        break;
-
-        case "number":
-        case "range":
-        break;
-
-        default:
-        break;
-      }
-    }
-
-    //TODO Waht about submit? it does not need Label tag
-    if(schema.title != null){
-      var lb = document.createElement("label");
-      lb.textContent = schema.title;
-      lb.appendChild(el);
-      el = lb;
     }
     if(schema.description!=null){
       el.setAttribute("title",schema.description);
