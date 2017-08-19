@@ -51,48 +51,138 @@ interface SchemaHandler{
 interface Form{
   Action:string;
   Method:string;
-  Name:string;
-  Id:string;
 }
 
 //Settings class
 class JsonSchema2DomSetting{
   Handlers:Array<SchemaHandler>=[];
+  FormName:string;
   IdPrefix:string = "";
   FormDefinition:Form=null;
+  onElementCreated:Array<Function>=[];
 }
 
 //Main Class
 class JsonSchema2Dom {
   Settings:JsonSchema2DomSetting;
-  constructor(settings:JsonSchema2DomSetting){
+  constructor(formName:string,settings:JsonSchema2DomSetting){
+    formName = formName || "form";
     if(settings != null){
       this.Settings = settings;
     }else{
       this.Settings = new JsonSchema2DomSetting();
     }
+    this.Settings.FormName = formName;
+
   }
 
   //Object Default Processor
-  ObjectProcessor(self:JsonSchema2Dom,name:string,schema:Schema,required:boolean):Element{
+  ObjectProcessor(self:JsonSchema2Dom,name:string,schema:Schema,required:boolean,path:string):Element{
     let el:Element;
     schema.required = schema.required || [];
     schema.title = schema.title || name || schema.typeName;
+    el = document.createElement("fieldset");
     if(schema.title!=null){
-      el = document.createElement("fieldset");
       let lg:Element = document.createElement("legend");
       lg.textContent = schema.title;
       el.appendChild(lg);
-    }else{
-      el = document.createElement("div");
     }
     if(schema.properties!= null){
       //TODO async process
       for(let prop in schema.properties){
-        el.appendChild(self.GetHandler(self,schema.properties[prop])(self,prop,schema.properties[prop],schema.required.indexOf(prop) != -1));
+        el.appendChild(self.GetHandler(self,schema.properties[prop])(self,prop,schema.properties[prop],schema.required.indexOf(prop) != -1,path+name+"/"));
       }
     }
+    for(var i=0;i< self.Settings.onElementCreated.length;i++){
+      el = self.Settings.onElementCreated[i](el,schema,path);
+    }
     return el;
+  }
+
+
+  InputProcessor(self:JsonSchema2Dom,name:string,schema:Schema,required:boolean,path:string):Element{
+    let row:Element = document.createElement("div");
+    let inp:Element = document.createElement("input");;
+    let title:Element;
+    if(schema.format != null){
+      inp.setAttribute("type",schema.format);
+      switch(schema.format){
+        case "button":
+        case "submit":
+        case "reset":
+          inp.setAttribute("value",schema.title);
+        break;
+        case "image":
+          inp.setAttribute("value",schema.title);
+          if(schema.src != null){
+            inp.setAttribute("src",schema.src);
+          }
+        break;
+        default:
+          switch(schema.type){
+            case "file":
+              if((schema.maximum != null && schema.maximum!=1) || (schema.maxItems!= null && schema.maxItems!=1)){
+                inp.setAttribute("multiple","multiple");
+              }
+            break;
+            case "password":
+              if(schema.minLength!=null){
+                inp.setAttribute("minLength",schema.minLength.toString());
+              }
+            break;
+            case "text":
+              if(schema.maxLength!=null){
+                if(schema.maxLength >= 100){
+                  inp.remove();
+                  inp = document.createElement("textarea");
+                }
+                inp.setAttribute("maxLength",schema.maxLength.toString());
+              }
+            break;
+            case "number":
+            case "range":
+            case "date":
+            case "datetime-local":
+            case "month":
+            case "time":
+            case "week":
+              if(schema.maximum != null){
+                inp.setAttribute("maximum",schema.maximum.toString());
+              }
+              if(schema.minimum != null){
+                inp.setAttribute("minimum",schema.minimum.toString());
+              }
+            break;
+          }
+        break;
+      }
+    }
+    if(schema.title != null){
+      title = document.createElement("label");
+      title.textContent = schema.title;
+      title.setAttribute("for",self.Settings.IdPrefix + name);
+      row.appendChild(title);
+    }
+    inp.setAttribute("id",self.Settings.IdPrefix + name);
+    inp.setAttribute("name",name);
+    if(required){
+      inp.setAttribute("required","");
+    }
+    if(schema.pattern!=null){
+      inp.setAttribute("pattern",schema.pattern);
+    }
+    if(schema.description!=null){
+      inp.setAttribute("title",schema.description);
+    }
+
+    row.appendChild(inp);
+    for(var i=0;i< self.Settings.onElementCreated.length;i++){
+      row = self.Settings.onElementCreated[i](row,schema,path);
+      inp = self.Settings.onElementCreated[i](inp,schema,path);
+      if(title)
+        title = self.Settings.onElementCreated[i](title,schema,path);
+    }
+    return row;
   }
 
   //Determine handler of a Schema
@@ -114,97 +204,20 @@ class JsonSchema2Dom {
     return self.ObjectProcessor;
   }
 
-  //
-  InputProcessor(self:JsonSchema2Dom,name:string,schema:Schema,required:boolean):Element{
-    let el:Element;
-    el = document.createElement("input");
-    if(schema.format != null){
-      el.setAttribute("type",schema.format);
-      switch(schema.format){
-        case "button":
-        case "submit":
-        case "reset":
-          el.setAttribute("value",schema.title);
-        break;
-        case "image":
-          el.setAttribute("value",schema.title);
-          if(schema.src != null){
-            el.setAttribute("src",schema.src);
-          }
-        break;
-        default:
-          switch(schema.type){
-            case "file":
-              if((schema.maximum != null && schema.maximum!=1) || (schema.maxItems!= null && schema.maxItems!=1)){
-                el.setAttribute("multiple","multiple");
-              }
-            break;
-            case "password":
-              if(schema.minLength!=null){
-                el.setAttribute("minLength",schema.minLength.toString());
-              }
-            break;
-            case "text":
-              if(schema.maxLength!=null){
-                if(schema.maxLength >= 100){
-                  el = document.createElement("textarea");
-                }
-                el.setAttribute("maxLength",schema.maxLength.toString());
-              }
-            break;
-            case "number":
-            case "range":
-            case "date":
-            case "datetime-local":
-            case "month":
-            case "time":
-            case "week":
-              if(schema.maximum != null){
-                el.setAttribute("maximum",schema.maximum.toString());
-              }
-              if(schema.minimum != null){
-                el.setAttribute("minimum",schema.minimum.toString());
-              }
-            break;
-          }
-          if(schema.title != null){
-            var lb = document.createElement("label");
-            lb.textContent = schema.title;
-            lb.appendChild(el);
-            el = lb;
-          }
-        break;
-      }
-    }else if(schema.title != null){
-      var lb = document.createElement("label");
-      lb.textContent = schema.title;
-      lb.appendChild(el);
-      el = lb;
-    }
-    el.setAttribute("id",self.Settings.IdPrefix + name);
-    el.setAttribute("name",name);
-    if(required){
-      el.setAttribute("required","");
-    }
-    if(schema.pattern!=null){
-      el.setAttribute("pattern",schema.pattern);
-    }
-    if(schema.description!=null){
-      el.setAttribute("title",schema.description);
-    }
-    return el;
-  }
-
   Parse(schema:Schema):Element{
-    let Container:Element = this.GetHandler(this,schema)(this,null,schema,false);
+    let path:string = "";
+    let Container:Element = this.GetHandler(this,schema)(this,this.Settings.FormName,schema,false,path);
     var def = this.Settings.FormDefinition;
     if(def!=null){
       let frm = document.createElement("form");
       frm.appendChild(Container);
       frm.setAttribute("action",def.Action);
       frm.setAttribute("method",def.Method);
-      frm.setAttribute("name",def.Name);
-      frm.setAttribute("id",this.Settings.IdPrefix + def.Id);
+      frm.setAttribute("name",this.Settings.FormName);
+      frm.setAttribute("id",this.Settings.IdPrefix + this.Settings.FormName);
+      for(var i=0;i< this.Settings.onElementCreated.length;i++){
+        frm = this.Settings.onElementCreated[i](frm,schema,path);
+      }
       Container = frm;
     }
     return Container;

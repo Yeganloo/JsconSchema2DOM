@@ -5,7 +5,7 @@
         "removeComments": true,
         "noImplicitAny": true,
         "module": "commonjs",
-        "outFile":"./dist/JsonSchema2Dom.js",
+        "outDir":"./dist",
         "sourceRoot":"./src"
     }
 }
