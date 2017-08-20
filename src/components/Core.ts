@@ -28,7 +28,10 @@ interface Schema{
   dependencies:{[id:string]:Schema|Array<string>}
   propertyNames:Schema;
   const:object;
-  enum:Array<string|number|{[id:string]:any}>;
+  enum:{
+    [id:string]:number|string;
+    [index:number]:number|string;
+  };
   enumNames:Array<string>;
   type:string|Array<string>;
   typeName:string;
@@ -104,7 +107,24 @@ class JsonSchema2Dom {
     let row:Element = document.createElement("div");
     let inp:Element = document.createElement("input");;
     let title:Element;
-    if(schema.format != null){
+    //TODO OneOf and Checkboxes and Radio
+    if(schema.enum != null){
+      inp = document.createElement("select");
+      if(schema.enumNames){
+        for(let en=0;en< schema.enumNames.length;en++){
+          var op= document.createElement("option");
+          op.value = schema.enum[en].toString();
+          op.textContent = schema.enumNames[en];
+          inp.appendChild(op);
+        }
+      }else{
+        for(let en in schema.enum){
+          var op= document.createElement("option");
+          op.value = schema.enum[en].toString();
+          inp.appendChild(op);
+        }
+      }
+    }else if(schema.format != null){
       schema.format = schema.format=="date-time"?"datetime-local":schema.format;
       inp.setAttribute("type",schema.format);
       switch(schema.format){
@@ -165,6 +185,12 @@ class JsonSchema2Dom {
         case "integer":
         case "number":
           inp.setAttribute("type","number");
+          if(schema.maximum != null){
+            inp.setAttribute("maximum",schema.maximum.toString());
+          }
+          if(schema.minimum != null){
+            inp.setAttribute("minimum",schema.minimum.toString());
+          }
         break;
         case "null":
         case "object":
@@ -208,6 +234,7 @@ class JsonSchema2Dom {
     if(this.Settings.Handlers.length>0){
       //TODO Check Signiture to find DOM creator
     }else{
+      //TODO OneOf and enum move to here???
       if(schema.format!=null){
         return self.InputProcessor;
       }else{
@@ -233,8 +260,8 @@ class JsonSchema2Dom {
       frm.setAttribute("method",def.Method);
       frm.setAttribute("name",this.Settings.FormName);
       frm.setAttribute("id",this.Settings.IdPrefix + this.Settings.FormName);
-      for(var i=0;i< this.Settings.onElementCreated.length;i++){
-        frm = this.Settings.onElementCreated[i](frm,schema,path);
+      for(let ev=0;ev< this.Settings.onElementCreated.length;ev++){
+        frm = this.Settings.onElementCreated[ev](frm,schema,path);
       }
       Container = frm;
     }

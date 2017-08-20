@@ -41,6 +41,7 @@
       }
     },
     "test5": {
+      "title":"enums",
       "typeName": "testenum",
       "type": "integer",
       "enum": [
