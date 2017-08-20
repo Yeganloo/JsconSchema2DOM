@@ -105,6 +105,7 @@ class JsonSchema2Dom {
     let inp:Element = document.createElement("input");;
     let title:Element;
     if(schema.format != null){
+      schema.format = schema.format=="date-time"?"datetime-local":schema.format;
       inp.setAttribute("type",schema.format);
       switch(schema.format){
         case "button":
@@ -154,6 +155,23 @@ class JsonSchema2Dom {
               }
             break;
           }
+        break;
+      }
+    }else{
+      switch(schema.type){
+        case "boolean":
+          inp.setAttribute("type","checkbox");
+        break;
+        case "integer":
+        case "number":
+          inp.setAttribute("type","number");
+        break;
+        case "null":
+        case "object":
+          throw "Internal Error. Invalid handler is called!";
+
+        default:
+          inp.setAttribute("type","text");
         break;
       }
     }

@@ -12,7 +12,7 @@
       var parser = new JsonSchema2Dom();
       parser.Settings.onElementCreated.push(BootstrapFormFormatter);
       parser.Settings.onElementCreated.push(VueFormFormatter);
-      parser.Settings.ContainerID = "vueform";
+      parser.Settings.FormName = "vueform";
       parser.Settings.FormDefinition = {
         Action:"",
         Method:"post"
@@ -25,9 +25,20 @@
         $("body").append(k);
 
         var app = new Vue({
-          el: '#app',
-          data: {
-            message: 'Hello Vue!'
+          el: '#vueform',
+          data() {
+            return {
+              vueform: {
+                test1:"Hello",
+                test2:"Hosein",
+                test3:"t3",
+                test4:{
+                  name:"Hosein",
+                  lname:"Yeganloo",
+                },
+                test5:"123"
+              }
+            }
           }
         });
 
